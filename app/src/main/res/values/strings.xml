@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">Spotify Widget</string>
     <string name="widget_description">Contrôle Spotify (3×1)</string>
+    <string name="widget_description_4x1">Contrôle Spotify (4×1)</string>
+    <string name="widget_label_3x1">Spotify 3×1</string>
+    <string name="widget_label_4x1">Spotify 4×1</string>
     <string name="widget_nothing">Rien en lecture</string>
     <string name="widget_grant_access">Appuyer pour activer l\'accès</string>
     <string name="setup_text">Pour afficher le titre en cours et contrôler Spotify, autorise l\'accès aux notifications pour cette app, puis ajoute le widget depuis l\'écran d\'accueil.</string>

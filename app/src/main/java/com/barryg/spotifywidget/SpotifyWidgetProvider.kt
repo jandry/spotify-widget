@@ -12,7 +12,10 @@ import android.media.session.PlaybackState
 import android.provider.Settings
 import android.widget.RemoteViews
 
-class SpotifyWidgetProvider : AppWidgetProvider() {
+/** 4×1 variant: same behaviour and layout, declared separately so it shows up as its own widget. */
+class SpotifyWidgetProvider4x1 : SpotifyWidgetProvider()
+
+open class SpotifyWidgetProvider : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
         val views = buildViews(context)
@@ -36,7 +39,9 @@ class SpotifyWidgetProvider : AppWidgetProvider() {
 
         fun refresh(context: Context) {
             val manager = AppWidgetManager.getInstance(context)
-            val ids = manager.getAppWidgetIds(ComponentName(context, SpotifyWidgetProvider::class.java))
+            val ids = listOf(SpotifyWidgetProvider::class.java, SpotifyWidgetProvider4x1::class.java)
+                .flatMap { manager.getAppWidgetIds(ComponentName(context, it)).toList() }
+                .toIntArray()
             if (ids.isEmpty()) return
             val views = buildViews(context)
             ids.forEach { manager.updateAppWidget(it, views) }

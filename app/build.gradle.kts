@@ -11,8 +11,9 @@ android {
         applicationId = "com.barryg.spotifywidget"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        // Overridden by the CI workflow so each release gets a higher version.
+        versionCode = System.getenv("VERSION_CODE")?.toInt() ?: 1
+        versionName = System.getenv("VERSION_NAME") ?: "1.0.0-local"
     }
 
     // Keystore provided through env vars (set by the CI workflow).

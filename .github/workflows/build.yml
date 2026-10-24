@@ -16,8 +16,32 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.10.2
-      - run: gradle assembleDebug
+      - name: Prepare signing keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          SECRET_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            PASSWORD="$SECRET_PASSWORD"
+          else
+            echo "::warning::Pas de secret KEYSTORE_BASE64 : clé temporaire générée, l'APK ne pourra pas mettre à jour une version installée avec une autre clé."
+            PASSWORD="$(openssl rand -hex 16)"
+            keytool -genkeypair -keystore "$RUNNER_TEMP/release.jks" -alias spotify-widget \
+              -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Spotify Widget" \
+              -storepass "$PASSWORD" -keypass "$PASSWORD"
+          fi
+          echo "::add-mask::$PASSWORD"
+          {
+            echo "KEYSTORE_PATH=$RUNNER_TEMP/release.jks"
+            echo "KEYSTORE_PASSWORD=$PASSWORD"
+            echo "KEY_ALIAS=spotify-widget"
+            echo "KEY_PASSWORD=$PASSWORD"
+          } >> "$GITHUB_ENV"
+
+      - run: gradle assembleRelease
+      - run: cp app/build/outputs/apk/release/app-release.apk spotify-widget.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: spotify-widget-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: spotify-widget
+          path: spotify-widget.apk

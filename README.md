@@ -4,7 +4,21 @@ Widget Android 3×1 pour contrôler Spotify depuis l'écran d'accueil : pochette
 
 Le widget lit la session média de Spotify (`MediaSessionManager`), ce qui nécessite l'accès aux notifications pour l'app. Aucun compte développeur Spotify n'est requis.
 
-## Méthode simple : build dans le cloud (GitHub Actions)
+## Installation (APK déjà construit)
+
+Si tu as déjà `spotify-widget.apk` (voir plus bas pour l'obtenir), l'installation prend quelques minutes. L'app Spotify doit être installée sur le téléphone (Android 8.0+).
+
+1. **Copier l'APK sur le téléphone** : Drive, mail, câble USB, etc.
+2. **L'ouvrir** depuis le gestionnaire de fichiers. Android demande d'autoriser « Installer des applis inconnues » pour l'app utilisée (Fichiers, Chrome, Drive…) : accepter, puis **Installer**. Play Protect peut avertir que l'app est inconnue : choisir **Installer quand même**.
+   - Alternative par câble : `adb install -r spotify-widget.apk`.
+3. **Accorder l'accès aux notifications** : ouvrir **Spotify Widget**, appuyer sur **Ouvrir les réglages**, activer **Spotify Widget** et accepter l'avertissement.
+   - Si l'option est grisée : `Réglages > Applis > Spotify Widget > ⋮ > Autoriser les paramètres restreints`, puis réessayer.
+4. **Ajouter le widget** : appui long sur l'écran d'accueil, **Widgets**, **Spotify Widget**, le poser (3×1 par défaut).
+5. Lancer une lecture dans Spotify : le titre, la pochette et les boutons s'affichent.
+
+Sans l'accès aux notifications, le widget affiche « Appuyer pour activer l'accès » et un tap ouvre directement les réglages. Pour mettre à jour, installer le nouvel APK par-dessus (même clé de signature, voir [Signature de l'APK](#signature-de-lapk)).
+
+## Obtenir l'APK : build dans le cloud (GitHub Actions)
 
 Aucun outil Android à installer en local : le workflow [`.github/workflows/build.yml`](.github/workflows/build.yml) compile l'APK sur GitHub.
 
@@ -16,13 +30,29 @@ Aucun outil Android à installer en local : le workflow [`.github/workflows/buil
    git push -u origin HEAD
    ```
 
-2. Onglet **Actions** du dépôt, ouvrir le dernier run **Build APK** (ou le lancer via **Run workflow**), puis télécharger l'artefact `spotify-widget-debug` (zip contenant `app-debug.apk`).
-3. Installer l'APK sur le téléphone :
-   - **Sans ordinateur** : envoyer l'APK sur le téléphone (Drive, mail, AirDrop-like…), l'ouvrir et autoriser « Installer des applis inconnues » pour l'app utilisée.
-   - **Par câble** : `adb install -r app-debug.apk` (nécessite `brew install --cask android-platform-tools`).
-4. Suivre ensuite la section [Configuration sur le téléphone](#configuration-sur-le-téléphone).
+2. Onglet **Actions** du dépôt, ouvrir le dernier run **Build APK** (ou le lancer via **Run workflow**), puis télécharger l'artefact `spotify-widget` (zip contenant `spotify-widget.apk`, APK **release** signé).
+3. Dézipper l'artefact, puis suivre [Installation](#installation-apk-déjà-construit). Pour l'option `adb`, installer l'outil avec `brew install --cask android-platform-tools`.
 
-Les sections suivantes décrivent le build local, utile pour modifier le code et itérer vite.
+### Signature de l'APK
+
+Un APK release doit être signé pour être installable. Sans configuration, le workflow génère une clé temporaire à chaque run : l'APK s'installe, mais Android refusera de le mettre à jour par-dessus une version signée avec une autre clé (désinstaller d'abord).
+
+Pour une signature stable, créer un keystore une fois (n'importe quel JDK, ou `docker run --rm -it -v "$PWD":/k eclipse-temurin:17-jdk bash -c 'cd /k && keytool ...'`) :
+
+```bash
+keytool -genkeypair -keystore release.jks -alias spotify-widget \
+  -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Spotify Widget"
+base64 -i release.jks | pbcopy
+```
+
+Puis, dans le dépôt GitHub, `Settings > Secrets and variables > Actions`, ajouter :
+
+- `KEYSTORE_BASE64` : le contenu base64 copié ci-dessus
+- `KEYSTORE_PASSWORD` : le mot de passe choisi (le même pour le keystore et la clé)
+
+Ne jamais committer `release.jks` ni son mot de passe, et le sauvegarder : le perdre empêche les mises à jour.
+
+Les sections suivantes décrivent le build local, utile pour modifier le code et itérer vite. Les builds locaux et Docker produisent un APK **debug** (`assembleDebug`) ; l'APK final `spotify-widget.apk` vient du workflow GitHub.
 
 ## Méthode Docker
 
@@ -124,14 +154,7 @@ L'APK est produit dans `app/build/outputs/apk/debug/app-debug.apk`.
 
 Depuis Android Studio, le bouton Run fait la même chose.
 
-## Configuration sur le téléphone
-
-1. Ouvrir l'app **Spotify Widget** et appuyer sur **Ouvrir les réglages**.
-2. Activer l'accès aux notifications pour **Spotify Widget**. Android peut afficher un avertissement de sécurité, à accepter.
-   - Si l'option est grisée après une installation par APK : `Réglages > Applis > Spotify Widget > ⋮ > Autoriser les paramètres restreints`.
-3. Appui long sur l'écran d'accueil, **Widgets**, **Spotify Widget**, puis le poser (3×1 par défaut).
-
-Sans l'accès aux notifications, le widget affiche « Appuyer pour activer l'accès » et un tap ouvre directement les réglages.
+Après un déploiement de développement, la configuration sur le téléphone est la même que pour l'[Installation](#installation-apk-déjà-construit) (étapes 3 à 5).
 
 ## Dépannage
 

@@ -1,8 +1,8 @@
 package com.barryg.spotifywidget
 
 import android.content.ComponentName
+import android.media.MediaMetadata
 import android.media.session.MediaController
-import android.media.session.MediaMetadata
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
 import android.service.notification.NotificationListenerService
